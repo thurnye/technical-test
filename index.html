@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animated Butterflies</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+      }
+        #controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+  </head>
+  <body>
+    <canvas id="butterflyCanvas"></canvas>
+    <div id="controls" role="region" aria-label="Butterfly controls">
+      <h2>Controls</h2>
+      <div>
+        <label for="butterflyCount">Number of Butterflies:</label>
+        <input
+          type="number"
+          id="butterflyCount"
+          value="200"
+          min="10"
+          max="500"
+        />
+      </div>
+
+      <div>
+        <label for="speed">Speed</label>
+        <input
+          type="number"
+          id="speed"
+          value="0.005"
+          step="0.001"
+          min="0"
+          max="0.05"
+        />
+      </div>
+
+      <div>
+        <label for="colour">Colour</label>
+        <input id="colour" type="color" />
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById('butterflyCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const butterflyCount = 200;
+      const butterflies = [];
+      const mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+      const maxSpeed = 2; // Maximum speed limit
+      let frame = 0; // Frame counter for wing animation
+
+      class Butterfly {
+        constructor(x, y, size, speedX, speedY, color1, color2) {
+          this.x = x;
+          this.y = y;
+          this.size = size;
+          this.speedX = speedX;
+          this.speedY = speedY;
+          this.color1 = color1;
+          this.color2 = color2;
+          this.flapOffset = Math.random() * Math.PI * 2; // Random offset for wing flapping
+        }
+
+        draw() {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+
+          // Animate wing flap using sine wave with random offset
+          const wingAngle = Math.sin(frame * 0.1 + this.flapOffset) * 0.5; // Adjust flap speed and range
+
+          // Draw body
+          ctx.beginPath();
+          ctx.fillStyle = 'black';
+          ctx.ellipse(
+            0,
+            0,
+            this.size * 0.1,
+            this.size * 0.6,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          // Left wing (upper)
+          ctx.save();
+          ctx.rotate(-wingAngle);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(
+            -this.size * 2,
+            -this.size * 1.2,
+            -this.size * 2,
+            this.size * 0.8,
+            0,
+            0
+          );
+          ctx.fillStyle = this.color1;
+          ctx.fill();
+          ctx.restore();
+
+          // Left wing (lower)
+          ctx.save();
+          ctx.rotate(-wingAngle);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(
+            -this.size * 1.5,
+            this.size * 0.8,
+            -this.size * 1.5,
+            this.size * 2,
+            0,
+            0
+          );
+          ctx.fillStyle = this.color2;
+          ctx.fill();
+          ctx.restore();
+
+          // Right wing (upper)
+          ctx.save();
+          ctx.rotate(wingAngle);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(
+            this.size * 2,
+            -this.size * 1.2,
+            this.size * 2,
+            this.size * 0.8,
+            0,
+            0
+          );
+          ctx.fillStyle = this.color1;
+          ctx.fill();
+          ctx.restore();
+
+          // Right wing (lower)
+          ctx.save();
+          ctx.rotate(wingAngle);
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.bezierCurveTo(
+            this.size * 1.5,
+            this.size * 0.8,
+            this.size * 1.5,
+            this.size * 2,
+            0,
+            0
+          );
+          ctx.fillStyle = this.color2;
+          ctx.fill();
+          ctx.restore();
+
+          ctx.restore();
+        }
+
+        update() {
+          // Gravity effect towards the mouse
+          const dx = mouse.x - this.x;
+          const dy = mouse.y - this.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          const gravity = 0.005; // Adjust gravity strength
+
+          if (distance > 1) {
+            this.speedX += (dx / distance) * gravity;
+            this.speedY += (dy / distance) * gravity;
+          }
+
+          // Apply speed limit
+          const speed = Math.sqrt(
+            this.speedX * this.speedX + this.speedY * this.speedY
+          );
+          if (speed > maxSpeed) {
+            this.speedX *= maxSpeed / speed;
+            this.speedY *= maxSpeed / speed;
+          }
+
+          this.x += this.speedX;
+          this.y += this.speedY;
+
+          if (this.x > canvas.width || this.x < 0) this.speedX *= -1;
+          if (this.y > canvas.height || this.y < 0) this.speedY *= -1;
+        }
+      }
+
+      function createButterflies() {
+        for (let i = 0; i < butterflyCount; i++) {
+          const size = Math.random() * 20 + 10;
+          const x = Math.random() * canvas.width;
+          const y = Math.random() * canvas.height;
+          const speedX = (Math.random() - 0.5) * 2; // Reduced initial speed
+          const speedY = (Math.random() - 0.5) * 2; // Reduced initial speed
+          const color1 = `hsl(${Math.random() * 360}, 70%, 60%)`;
+          const color2 = `hsl(${Math.random() * 360}, 70%, 60%)`;
+
+          butterflies.push(
+            new Butterfly(x, y, size, speedX, speedY, color1, color2)
+          );
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        butterflies.forEach((butterfly) => {
+          butterfly.update();
+          butterfly.draw();
+        });
+        frame++;
+        requestAnimationFrame(animate);
+      }
+
+      createButterflies();
+      animate();
+
+      window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+    </script>
+  </body>
+</html>

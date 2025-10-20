@@ -51,17 +51,57 @@
       </div>
 
       <div>
-        <label for="colour">Colour</label>
-        <input id="colour" type="color" />
+        <label for="color1">Color 1</label>
+        <input id="color1" type="color" />
+      </div>
+      <div>
+        <label for="color2">Color 2</label>
+        <input id="color2" type="color" />
+      </div>
+      <div>
+        <button id="saveBtn">Save Preferences</button>
+        <button id="pauseBtn" aria-pressed="false">Pause Animation</button>
+  </div>
       </div>
     </div>
 
     <script>
+
       const canvas = document.getElementById('butterflyCanvas');
       const ctx = canvas.getContext('2d');
 
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
+
+
+        // save preferences
+          const defaults = { count: 200, speed: 2, color1: "#ff66cc", color2: "#66ccff" };
+    function loadPrefs() {
+      try {
+        const raw = localStorage.getItem("butterflyPrefs");
+        if (!raw) return { ...defaults };
+        const parsed = JSON.parse(raw);
+        return {
+          count: clamp(Number(parsed.count), 10, 500, defaults.count),
+          speed: clamp(Number(parsed.speed), 1, 10, defaults.speed),
+          color: sanitizeColor(parsed.color1) || defaults.color1,
+          color: sanitizeColor(parsed.color2) || defaults.color2,
+        };
+      } catch {
+        return { ...defaults };
+      }
+    }
+    function savePrefs(prefs) {
+      localStorage.setItem("butterflyPrefs", JSON.stringify(prefs));
+    }
+    function clamp(num, min, max, fallback) {
+      return isNaN(num) ? fallback : Math.min(Math.max(num, min), max);
+    }
+    function sanitizeColor(val) {
+      return /^#([0-9A-F]{3}){1,2}$/i.test(val) ? val : null;
+    }
+
+
 
       const butterflyCount = 200;
       const butterflies = [];
